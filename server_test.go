@@ -92,6 +92,8 @@ func TestRunAsRootInUserNamespace(t *testing.T) {
 	}
 
 	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, int32(http.StatusForbidden), resp.Response.Result.Code)
+	assert.Equal(t, "Can't set root for runAsUser in user namespace.", resp.Response.Result.Message)
 	assert.Equal(t, reqAr.Request.UID, resp.Response.UID)
 	assert.Equal(t, false, resp.Response.Allowed)
 }
@@ -160,6 +162,8 @@ func TestNoRunAsUserInUserNamespace(t *testing.T) {
 	}
 
 	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, int32(http.StatusForbidden), resp.Response.Result.Code)
+	assert.Equal(t, "runAsUser is required in user namespace.", resp.Response.Result.Message)
 	assert.Equal(t, reqAr.Request.UID, resp.Response.UID)
 	assert.Equal(t, false, resp.Response.Allowed)
 }

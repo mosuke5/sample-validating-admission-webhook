@@ -12,6 +12,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type Response struct {
@@ -77,12 +78,20 @@ func runAsUserValidation(c echo.Context) error {
 	// RunAsUseerが空の場合は拒否する
 	if pod.Spec.SecurityContext.RunAsUser == nil {
 		res.Allowed = false
+		res.Result = &metav1.Status{
+			Code:    http.StatusForbidden,
+			Message: "runAsUser is required in user namespace.",
+		}
 		return returnResponse(req.APIVersion, req.Kind, res, c)
 	}
 
 	// runasuserがrootなら拒否する
 	if isRootUser(pod.Spec.SecurityContext.RunAsUser) {
 		res.Allowed = false
+		res.Result = &metav1.Status{
+			Code:    http.StatusForbidden,
+			Message: "Can't set root for runAsUser in user namespace.",
+		}
 		return returnResponse(req.APIVersion, req.Kind, res, c)
 	}
 
