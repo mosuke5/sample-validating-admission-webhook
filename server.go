@@ -107,13 +107,7 @@ func isRootUser(uid *int64) bool {
 }
 
 func returnResponse(apiVersion string, kind string, response *admissionv1.AdmissionResponse, c echo.Context) error {
-	var httpStatus int
-	if response.Allowed {
-		httpStatus = http.StatusOK
-	} else {
-		httpStatus = http.StatusForbidden
-	}
-	return c.JSON(httpStatus, Response{
+	return c.JSON(http.StatusOK, Response{
 		ApiVersion: apiVersion,
 		Kind:       kind,
 		Response:   response,

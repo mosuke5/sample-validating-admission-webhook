@@ -91,7 +91,7 @@ func TestRunAsRootInUserNamespace(t *testing.T) {
 		panic(err)
 	}
 
-	assert.Equal(t, http.StatusForbidden, rec.Code)
+	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.Equal(t, reqAr.Request.UID, resp.Response.UID)
 	assert.Equal(t, false, resp.Response.Allowed)
 }
