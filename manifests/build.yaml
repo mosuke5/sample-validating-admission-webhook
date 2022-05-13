@@ -1,0 +1,19 @@
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: mytest-service
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: mytest-service:latest
+  strategy:
+    type: Docker
+  source:
+    binary: {}
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: mytest-service
+spec: {}

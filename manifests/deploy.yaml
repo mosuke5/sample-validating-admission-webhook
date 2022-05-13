@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mytest-service
+  name: mytest-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mytest-service
+  template:
+    metadata:
+      labels:
+        app: mytest-service
+    spec:
+      containers:
+        - image: 
+          name: mytest-service
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: mytest-service
+spec:
+  ports:
+  - name: web
+    port: 443 
+    targetPort: 1323
+  selector:
+    app: mytest-service
+
