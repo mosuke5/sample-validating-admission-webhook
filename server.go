@@ -58,7 +58,7 @@ func runAsUserValidation(c echo.Context) error {
 		panic(err)
 	}
 
-	var root int64 = 0
+	res.UID = req.Request.UID
 
 	// Pod情報取り出し
 	var pod corev1.Pod
@@ -68,45 +68,24 @@ func runAsUserValidation(c echo.Context) error {
 
 	// RunAsUseerが空の場合は拒否
 	if pod.Spec.SecurityContext.RunAsUser == nil {
-		res.UID = req.Request.UID
 		res.Allowed = false
-		return c.JSON(http.StatusForbidden, Response{
-			ApiVersion: req.APIVersion,
-			Kind:       req.Kind,
-			Response:   res,
-		})
+		return returnResponse(req.APIVersion, req.Kind, res, c)
 	}
 
 	// runasuserがroot以外なら許可して終了
-	if *pod.Spec.SecurityContext.RunAsUser != root {
-		res.UID = req.Request.UID
+	if !isRootUser(pod.Spec.SecurityContext.RunAsUser) {
 		res.Allowed = true
-
-		return c.JSON(http.StatusOK, Response{
-			ApiVersion: req.APIVersion,
-			Kind:       req.Kind,
-			Response:   res,
-		})
+		return returnResponse(req.APIVersion, req.Kind, res, c)
 	}
 
 	// runasuserがrootの場合はnamespace名で判断する
 	if isAdminNamespace(req.Request.Namespace) {
-		res.UID = req.Request.UID
 		res.Allowed = true
-		return c.JSON(http.StatusOK, Response{
-			ApiVersion: req.APIVersion,
-			Kind:       req.Kind,
-			Response:   res,
-		})
+		return returnResponse(req.APIVersion, req.Kind, res, c)
 	}
 
-	res.UID = req.Request.UID
 	res.Allowed = false
-	return c.JSON(http.StatusForbidden, Response{
-		ApiVersion: req.APIVersion,
-		Kind:       req.Kind,
-		Response:   res,
-	})
+	return returnResponse(req.APIVersion, req.Kind, res, c)
 }
 
 func isAdminNamespace(ns string) bool {
@@ -118,8 +97,23 @@ func isAdminNamespace(ns string) bool {
 	}
 }
 
+func isRootUser(uid *int64) bool {
+	var root int64 = 0
+	if *uid == root {
+		return true
+	} else {
+		return false
+	}
+}
+
 func returnResponse(apiVersion string, kind string, response *admissionv1.AdmissionResponse, c echo.Context) error {
-	return c.JSON(http.StatusForbidden, Response{
+	var httpStatus int
+	if response.Allowed {
+		httpStatus = http.StatusOK
+	} else {
+		httpStatus = http.StatusForbidden
+	}
+	return c.JSON(httpStatus, Response{
 		ApiVersion: apiVersion,
 		Kind:       kind,
 		Response:   response,
