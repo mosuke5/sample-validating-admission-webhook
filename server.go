@@ -50,6 +50,8 @@ func main() {
 	}
 }
 
+// admin namespace => runAsUserがなんでもOK
+// user namespace => runAsUserがroot以外ならOK
 func runAsUserValidation(c echo.Context) error {
 	req := new(admissionv1.AdmissionReview)
 	res := new(admissionv1.AdmissionResponse)
@@ -66,25 +68,26 @@ func runAsUserValidation(c echo.Context) error {
 		panic(err)
 	}
 
-	// RunAsUseerが空の場合は拒否
-	if pod.Spec.SecurityContext.RunAsUser == nil {
-		res.Allowed = false
-		return returnResponse(req.APIVersion, req.Kind, res, c)
-	}
-
-	// runasuserがroot以外なら許可して終了
-	if !isRootUser(pod.Spec.SecurityContext.RunAsUser) {
-		res.Allowed = true
-		return returnResponse(req.APIVersion, req.Kind, res, c)
-	}
-
-	// runasuserがrootの場合はnamespace名で判断する
+	// admin namespaceの場合は許可する
 	if isAdminNamespace(req.Request.Namespace) {
 		res.Allowed = true
 		return returnResponse(req.APIVersion, req.Kind, res, c)
 	}
 
-	res.Allowed = false
+	// RunAsUseerが空の場合は拒否する
+	if pod.Spec.SecurityContext.RunAsUser == nil {
+		res.Allowed = false
+		return returnResponse(req.APIVersion, req.Kind, res, c)
+	}
+
+	// runasuserがrootなら拒否する
+	if isRootUser(pod.Spec.SecurityContext.RunAsUser) {
+		res.Allowed = false
+		return returnResponse(req.APIVersion, req.Kind, res, c)
+	}
+
+	// それ以外は許可する（runAsUserが空でもなくroot以外が明示的に指定）
+	res.Allowed = true
 	return returnResponse(req.APIVersion, req.Kind, res, c)
 }
 

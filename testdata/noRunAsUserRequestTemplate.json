@@ -1,0 +1,226 @@
+{
+	"kind": "AdmissionReview",
+	"apiVersion": "admission.k8s.io/v1",
+	"request": {
+		"uid": "2e556680-fe1b-412d-9660-4e0574adcf47",
+		"kind": {
+			"group": "",
+			"version": "v1",
+			"kind": "Pod"
+		},
+		"resource": {
+			"group": "",
+			"version": "v1",
+			"resource": "pods"
+		},
+		"requestKind": {
+			"group": "",
+			"version": "v1",
+			"kind": "Pod"
+		},
+		"requestResource": {
+			"group": "",
+			"version": "v1",
+			"resource": "pods"
+		},
+		"name": "debug",
+		"namespace": "webhook-tutorial-system",
+		"operation": "CREATE",
+		"userInfo": {
+			"username": "mosuke5",
+			"uid": "048b269f-e08b-48ff-bb0e-815c16f16af9",
+			"groups": [
+				"system:authenticated:oauth",
+				"system:authenticated"
+			],
+			"extra": {
+				"scopes.authorization.openshift.io": [
+					"user:full"
+				]
+			}
+		},
+		"object": {
+			"kind": "Pod",
+			"apiVersion": "v1",
+			"metadata": {
+				"name": "debug",
+				"namespace": "webhook-tutorial-system",
+				"uid": "349a1319-63e0-49d9-9b67-5e502238c944",
+				"creationTimestamp": "2022-05-12T05:47:11Z",
+				"labels": {
+					"run": "debug"
+				},
+				"annotations": {
+					"openshift.io/scc": "anyuid"
+				},
+				"managedFields": [
+					{
+						"manager": "kubectl-run",
+						"operation": "Update",
+						"apiVersion": "v1",
+						"time": "2022-05-12T05:47:11Z",
+						"fieldsType": "FieldsV1",
+						"fieldsV1": {
+							"f:metadata": {
+								"f:labels": {
+									".": {},
+									"f:run": {}
+								}
+							},
+							"f:spec": {
+								"f:containers": {
+									"k:{\"name\":\"debug\"}": {
+										".": {},
+										"f:args": {},
+										"f:image": {},
+										"f:imagePullPolicy": {},
+										"f:name": {},
+										"f:resources": {},
+										"f:stdin": {},
+										"f:stdinOnce": {},
+										"f:terminationMessagePath": {},
+										"f:terminationMessagePolicy": {},
+										"f:tty": {}
+									}
+								},
+								"f:dnsPolicy": {},
+								"f:enableServiceLinks": {},
+								"f:restartPolicy": {},
+								"f:schedulerName": {},
+								"f:securityContext": {},
+								"f:terminationGracePeriodSeconds": {}
+							}
+						}
+					}
+				]
+			},
+			"spec": {
+				"volumes": [
+					{
+						"name": "kube-api-access-8b26w",
+						"projected": {
+							"sources": [
+								{
+									"serviceAccountToken": {
+										"expirationSeconds": 3607,
+										"path": "token"
+									}
+								},
+								{
+									"configMap": {
+										"name": "kube-root-ca.crt",
+										"items": [
+											{
+												"key": "ca.crt",
+												"path": "ca.crt"
+											}
+										]
+									}
+								},
+								{
+									"downwardAPI": {
+										"items": [
+											{
+												"path": "namespace",
+												"fieldRef": {
+													"apiVersion": "v1",
+													"fieldPath": "metadata.namespace"
+												}
+											}
+										]
+									}
+								},
+								{
+									"configMap": {
+										"name": "openshift-service-ca.crt",
+										"items": [
+											{
+												"key": "service-ca.crt",
+												"path": "service-ca.crt"
+											}
+										]
+									}
+								}
+							],
+							"defaultMode": 420
+						}
+					}
+				],
+				"containers": [
+					{
+						"name": "debug",
+						"image": "registry.gitlab.com/mosuke5/debug-container:latest",
+						"args": [
+							"/bin/bash"
+						],
+						"resources": {},
+						"volumeMounts": [
+							{
+								"name": "kube-api-access-8b26w",
+								"readOnly": true,
+								"mountPath": "/var/run/secrets/kubernetes.io/serviceaccount"
+							}
+						],
+						"terminationMessagePath": "/dev/termination-log",
+						"terminationMessagePolicy": "File",
+						"imagePullPolicy": "Always",
+						"securityContext": {
+							"capabilities": {
+								"drop": [
+									"MKNOD"
+								]
+							}
+						},
+						"stdin": true,
+						"stdinOnce": true,
+						"tty": true
+					}
+				],
+				"restartPolicy": "Always",
+				"terminationGracePeriodSeconds": 30,
+				"dnsPolicy": "ClusterFirst",
+				"serviceAccountName": "default",
+				"serviceAccount": "default",
+				"securityContext": {
+					"seLinuxOptions": {
+						"level": "s0:c28,c27"
+					}
+				},
+				"imagePullSecrets": [
+					{
+						"name": "default-dockercfg-mbbwf"
+					}
+				],
+				"schedulerName": "default-scheduler",
+				"tolerations": [
+					{
+						"key": "node.kubernetes.io/not-ready",
+						"operator": "Exists",
+						"effect": "NoExecute",
+						"tolerationSeconds": 300
+					},
+					{
+						"key": "node.kubernetes.io/unreachable",
+						"operator": "Exists",
+						"effect": "NoExecute",
+						"tolerationSeconds": 300
+					}
+				],
+				"priority": 0,
+				"enableServiceLinks": true,
+				"preemptionPolicy": "PreemptLowerPriority"
+			},
+			"status": {
+				"phase": "Pending",
+				"qosClass": "BestEffort"
+			}
+		},
+		"oldObject": null,
+		"dryRun": false,
+		"options": {
+			"kind": "CreateOptions",
+			"apiVersion": "meta.k8s.io/v1",
+			"fieldManager": "kubectl-run"
+		}
+	}
+}
