@@ -52,12 +52,26 @@ func postRequest(e *echo.Echo, reqAr admissionv1.AdmissionReview) (*httptest.Res
 	return rec, resp
 }
 
+// runAsUser is nonRoot, namespace is user (but including 'admin' in the name)
+// => Allowed is true
+func TestNamespaceName(t *testing.T) {
+	e := echo.New()
+
+	reqAr := readRequestTemplate("testdata/nonRootRequestTemplate.json")
+	reqAr.Request.Namespace = "useradmin-namespace"
+
+	rec, resp := postRequest(e, reqAr)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, reqAr.Request.UID, resp.Response.UID)
+	assert.Equal(t, true, resp.Response.Allowed)
+}
+
 // runAsUser is nonRoot, namespace is user
 // => Allowed is true
 func TestRunAsNonRootInUserNamespace(t *testing.T) {
 	e := echo.New()
 
-	//必要なパラメータセット
 	reqAr := readRequestTemplate("testdata/nonRootRequestTemplate.json")
 	reqAr.Request.Namespace = "user-namespace"
 
@@ -73,7 +87,6 @@ func TestRunAsNonRootInUserNamespace(t *testing.T) {
 func TestRunAsRootInUserNamespace(t *testing.T) {
 	e := echo.New()
 
-	//必要なパラメータセット
 	reqAr := readRequestTemplate("testdata/rootRequestTemplate.json")
 	reqAr.Request.Namespace = "user-namespace"
 
@@ -91,7 +104,6 @@ func TestRunAsRootInUserNamespace(t *testing.T) {
 func TestRunAsRootInAdminNamespace(t *testing.T) {
 	e := echo.New()
 
-	//必要なパラメータセット
 	reqAr := readRequestTemplate("testdata/nonRootRequestTemplate.json")
 	reqAr.Request.Namespace = "admin-namespace"
 
@@ -107,7 +119,6 @@ func TestRunAsRootInAdminNamespace(t *testing.T) {
 func TestNoRunAsUserInUserNamespace(t *testing.T) {
 	e := echo.New()
 
-	//必要なパラメータセット
 	reqAr := readRequestTemplate("testdata/noRunAsUserRequestTemplate.json")
 	reqAr.Request.Namespace = "user-namespace"
 
@@ -125,7 +136,6 @@ func TestNoRunAsUserInUserNamespace(t *testing.T) {
 func TestNoRunAsUserInAdminNamespace(t *testing.T) {
 	e := echo.New()
 
-	//必要なパラメータセット
 	reqAr := readRequestTemplate("testdata/noRunAsUserRequestTemplate.json")
 	reqAr.Request.Namespace = "admin-namespace"
 
