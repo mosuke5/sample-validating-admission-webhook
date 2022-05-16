@@ -4,8 +4,10 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 
 	"github.com/labstack/echo/v4"
@@ -20,33 +22,36 @@ func main() {
 		serverCert = flag.String("server-cert", "./server.crt", "Server certificate")
 		serverKey  = flag.String("server-key", "./server.key", "Server key")
 		serverPort = flag.String("port", "8443", "Server listen port")
+		bodyDump   = flag.Bool("body-dump", false, "Enable body dump")
 	)
+
 	flag.Parse()
 	e := echo.New()
 
-	// 練習のためリクエストボディをログに吐き出しておきます。
-	// 実際に来たリクエストを確認するためです。
-	e.Use(middleware.BodyDump(func(c echo.Context, reqBody, resBody []byte) {
-		//fmt.Fprintf(os.Stderr, "Request body: %v\n", string(reqBody))
-	}))
+	// for debug
+	if *bodyDump {
+		e.Use(middleware.BodyDump(func(c echo.Context, reqBody, resBody []byte) {
+			fmt.Fprintf(os.Stderr, "Request body: %v\n", string(reqBody))
+		}))
+	}
 
 	e.POST("/runasuser-validation", runAsUserValidation)
 
 	s := http.Server{
-		Addr:      ":" + *serverPort,
-		Handler:   e,
+		Addr:    ":" + *serverPort,
+		Handler: e,
 		TLSConfig: &tls.Config{
-			//MinVersion: 1, // customize TLS configuration
+			MinVersion: tls.VersionTLS12,
 		},
-		//ReadTimeout: 30 * time.Second, // use custom timeouts
 	}
+
 	if err := s.ListenAndServeTLS(*serverCert, *serverKey); err != http.ErrServerClosed {
 		log.Fatal(err)
 	}
 }
 
-// admin namespace => runAsUserがなんでもOK
-// user namespace => runAsUserがroot以外ならOK
+// admin namespace => any runAsUser is ok
+// user namespace  => runAsUser other than root or empty is ok
 func runAsUserValidation(c echo.Context) error {
 	req := new(admissionv1.AdmissionReview)
 	res := new(admissionv1.AdmissionReview)
@@ -56,19 +61,17 @@ func runAsUserValidation(c echo.Context) error {
 		panic(err)
 	}
 
-	// Pod情報取り出し
+	// Fetch pod data
 	var pod corev1.Pod
 	if err := json.Unmarshal(req.Request.Object.Raw, &pod); err != nil {
 		panic(err)
 	}
 
-	// admin namespaceの場合は許可する
 	if isAdminNamespace(req.Request.Namespace) {
 		res.Response.Allowed = true
 		return returnResponse(req, res, c)
 	}
 
-	// RunAsUseerが空の場合は拒否する
 	if pod.Spec.SecurityContext.RunAsUser == nil {
 		res.Response.Allowed = false
 		res.Response.Result = &metav1.Status{
@@ -78,7 +81,6 @@ func runAsUserValidation(c echo.Context) error {
 		return returnResponse(req, res, c)
 	}
 
-	// runasuserがrootなら拒否する
 	if isRootUser(pod.Spec.SecurityContext.RunAsUser) {
 		res.Response.Allowed = false
 		res.Response.Result = &metav1.Status{
@@ -86,11 +88,11 @@ func runAsUserValidation(c echo.Context) error {
 			Message: "Can't set root for runAsUser in user namespace.",
 		}
 		return returnResponse(req, res, c)
-	}
 
-	// それ以外は許可する（runAsUserが空でもなくroot以外が明示的に指定）
-	res.Response.Allowed = true
-	return returnResponse(req, res, c)
+	} else {
+		res.Response.Allowed = true
+		return returnResponse(req, res, c)
+	}
 }
 
 func isAdminNamespace(ns string) bool {
