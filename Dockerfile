@@ -13,13 +13,8 @@ RUN go build -o /myserver
 
 ## deploy
 FROM redhat/ubi8-minimal:8.5
-
 WORKDIR /
-
 COPY --from=build /myserver /myserver
-
 EXPOSE 1323
-
 USER 1001
-
 ENTRYPOINT ["/myserver"]
