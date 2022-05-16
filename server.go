@@ -15,12 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type Response struct {
-	ApiVersion string                         `json:"apiVersion"`
-	Kind       string                         `json:"kind"`
-	Response   *admissionv1.AdmissionResponse `json:"response"`
-}
-
 func main() {
 	var (
 		serverCert = flag.String("server-cert", "./server.crt", "Server certificate")
@@ -55,13 +49,12 @@ func main() {
 // user namespace => runAsUserがroot以外ならOK
 func runAsUserValidation(c echo.Context) error {
 	req := new(admissionv1.AdmissionReview)
-	res := new(admissionv1.AdmissionResponse)
+	res := new(admissionv1.AdmissionReview)
+	res.Response = new(admissionv1.AdmissionResponse)
 
 	if err := c.Bind(req); err != nil {
 		panic(err)
 	}
-
-	res.UID = req.Request.UID
 
 	// Pod情報取り出し
 	var pod corev1.Pod
@@ -71,33 +64,33 @@ func runAsUserValidation(c echo.Context) error {
 
 	// admin namespaceの場合は許可する
 	if isAdminNamespace(req.Request.Namespace) {
-		res.Allowed = true
-		return returnResponse(req.APIVersion, req.Kind, res, c)
+		res.Response.Allowed = true
+		return returnResponse(req, res, c)
 	}
 
 	// RunAsUseerが空の場合は拒否する
 	if pod.Spec.SecurityContext.RunAsUser == nil {
-		res.Allowed = false
-		res.Result = &metav1.Status{
+		res.Response.Allowed = false
+		res.Response.Result = &metav1.Status{
 			Code:    http.StatusForbidden,
 			Message: "runAsUser is required in user namespace.",
 		}
-		return returnResponse(req.APIVersion, req.Kind, res, c)
+		return returnResponse(req, res, c)
 	}
 
 	// runasuserがrootなら拒否する
 	if isRootUser(pod.Spec.SecurityContext.RunAsUser) {
-		res.Allowed = false
-		res.Result = &metav1.Status{
+		res.Response.Allowed = false
+		res.Response.Result = &metav1.Status{
 			Code:    http.StatusForbidden,
 			Message: "Can't set root for runAsUser in user namespace.",
 		}
-		return returnResponse(req.APIVersion, req.Kind, res, c)
+		return returnResponse(req, res, c)
 	}
 
 	// それ以外は許可する（runAsUserが空でもなくroot以外が明示的に指定）
-	res.Allowed = true
-	return returnResponse(req.APIVersion, req.Kind, res, c)
+	res.Response.Allowed = true
+	return returnResponse(req, res, c)
 }
 
 func isAdminNamespace(ns string) bool {
@@ -118,10 +111,7 @@ func isRootUser(uid *int64) bool {
 	}
 }
 
-func returnResponse(apiVersion string, kind string, response *admissionv1.AdmissionResponse, c echo.Context) error {
-	return c.JSON(http.StatusOK, Response{
-		ApiVersion: apiVersion,
-		Kind:       kind,
-		Response:   response,
-	})
+func returnResponse(request *admissionv1.AdmissionReview, response *admissionv1.AdmissionReview, c echo.Context) error {
+	response.Response.UID = request.Request.UID
+	return c.JSON(http.StatusOK, response)
 }
