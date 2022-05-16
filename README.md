@@ -1,3 +1,5 @@
+[![application ci](https://github.com/mosuke5/sample-validation-admission-webhook/actions/workflows/test.yaml/badge.svg)](https://github.com/mosuke5/sample-validation-admission-webhook/actions/workflows/test.yaml)
+
 # Sample Validation Admission Webhook
 This is a sample validation admission webhook.  
 Specification is that if `.spec.SecurityContext.RunAsUser` is empty or root(value is `0`), refuse request, except namespace name matches `admin-*`.
