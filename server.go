@@ -31,7 +31,7 @@ func main() {
 	// for debug
 	if *bodyDump {
 		e.Use(middleware.BodyDump(func(c echo.Context, reqBody, resBody []byte) {
-			fmt.Fprintf(os.Stderr, "Request body: %v\n", string(reqBody))
+			fmt.Fprintf(os.Stderr, "Request body: %v\nResponse body: %v\n", string(reqBody), string(resBody))
 		}))
 	}
 
