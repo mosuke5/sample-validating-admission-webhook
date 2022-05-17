@@ -114,6 +114,8 @@ func isRootUser(uid *int64) bool {
 }
 
 func returnResponse(request *admissionv1.AdmissionReview, response *admissionv1.AdmissionReview, c echo.Context) error {
+	response.Kind = request.Kind
+	response.APIVersion = request.APIVersion
 	response.Response.UID = request.Request.UID
 	return c.JSON(http.StatusOK, response)
 }
