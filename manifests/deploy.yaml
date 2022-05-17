@@ -1,32 +1,42 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    app: mytest-service
-  name: mytest-service
+  name: mywebhook
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mytest-service
+      app: mywebhook
   template:
     metadata:
       labels:
-        app: mytest-service
+        app: mywebhook
     spec:
       containers:
-        - image: 
-          name: mytest-service
+      - name: app
+        args:
+          - -server-cert=/tmp/tls/tls.crt
+          - -server-key=/tmp/tls/tls.key
+        imagePullPolicy: Always
+        image: ghcr.io/mosuke5/sample-validating-admission-webhook:main
+        ports:
+        - containerPort: 8443
+        volumeMounts:
+        - name: tls
+          mountPath: /tmp/tls/
+      volumes:
+      - name: tls
+        secret:
+          secretName: mywebhook-secret
 ---
-kind: Service
 apiVersion: v1
+kind: Service
 metadata:
-  name: mytest-service
+  name: mywebhook
 spec:
-  ports:
-  - name: web
-    port: 443 
-    targetPort: 1323
   selector:
-    app: mytest-service
-
+    app: mywebhook
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 8443
