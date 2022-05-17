@@ -1,0 +1,22 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: "sample-validating-webhook"
+webhooks:
+- name: "mywebhook.mynamespace.svc.cluster.local"
+  failurePolicy: Fail
+  rules:
+  - apiGroups: [""]
+    operations: ["CREATE"]
+    apiVersions: ["v1"]
+    resources: ["pods"]
+    scope: "Namespaced"
+  clientConfig:
+    caBundle: BASE64_ENCODED_PEM_FILE
+    service:
+      namespace: mynamespace
+      name: mywebhook
+      path: /runasuser-validation
+  admissionReviewVersions: ["v1"]
+  timeoutSeconds: 5
+  sideEffects: None
